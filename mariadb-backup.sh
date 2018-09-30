@@ -25,9 +25,12 @@
 
 ## set default variables
 backup_root=/srv/backups/mariadb	# root directory for all backups
-v=true					# verbose output
-keep=7					# number of old backups to keep
-hash=sha256				# crypto hash to use for checksums
+v=true           # verbose output
+keep=7           # number of old backups to keep
+hash=sha256      # crypto hash to use for checksums
+mycnf=./.my.cnf  # default location of .my.cnf for user and password configuration
+mariadbbin=      # path to prefix to mysqldump and mysqlshow
+databases=       # databases to backup (all if empty)
 
 # set mysqldump options
 dumpopts='--single-transaction --flush-logs --flush-privileges'
@@ -35,7 +38,7 @@ dumpopts='--single-transaction --flush-logs --flush-privileges'
 ## don't edit below this line
 
 # get our options
-while getopts qk:h: opt; do
+while getopts qk:h:t:c:b:d: opt; do
   case $opt in
   q)
       v=false
@@ -46,12 +49,30 @@ while getopts qk:h: opt; do
   h)
       hash=$OPTARG 
       ;;
+  t)
+      backup_root=$OPTARG
+      ;;
+  c)
+      mycnf=$OPTARG
+      ;;
+  b)
+      mariadbbin=$OPTARG
+      ;;
+  d)
+      databases=$OPTARG
+      ;;
   esac
 done
 shift $((OPTIND - 1))
 
 # set a righteous mask
 umask 0027
+
+# set effective config file path
+if [ ! -f $mycnf ]; then
+  echo "Config file '$mycnf' not found. Ignoring it."
+  mycnf=""
+fi
 
 # create backup path
 stamp=`date +%Y-%m-%d.%H%M%S`
@@ -64,9 +85,13 @@ $v && printf 'Backup location: %s\n' $backup_dir
 
 # get a list of databases to backup (strip out garbage and internal databases)
 _get_db_list () {
-  mysqlshow | \
-    sed -r '/Databases|information_schema|performance_schema/d' | \
-    awk '{ print $2 }'
+  if [ -z $databases ]; then
+    ${mariadbbin}mysqlshow --defaults-extra-file=$mycnf | \
+      sed -r '/Databases|information_schema|performance_schema/d' | \
+      awk '{ print $2 }'
+  else
+    echo $(echo $databases | tr "," "\n")
+  fi
 }
 
 # get a list of backups in the backup directory, ignore files and links
@@ -77,7 +102,12 @@ _get_backups () {
 
 # dump database
 _dump_db () {
-   nice -n 19 mysqldump $dumpopts $1 | nice -n 19 gzip
+  if [ -f nice ]; then
+    nicify="nice -n 19"
+  else
+    nicify=
+  fi
+  ${nicify}${mariadbbin}mysqldump --defaults-extra-file=$mycnf $dumpopts $1 | ${nicify}gzip
 }
 
 # create checksums
@@ -86,7 +116,7 @@ _checksum () {
   printf '%s %s\n' $sum `basename $1`
 }
 
-# get the database list and remove garbage
+# get the database list
 db_list=`_get_db_list`
 
 # run the backup
