@@ -30,6 +30,7 @@ keep=7           # number of old backups to keep
 hash=sha256      # crypto hash to use for checksums
 mycnf=./.my.cnf  # default location of .my.cnf for user and password configuration
 mariadbbin=      # path to prefix to mysqldump and mysqlshow
+databases=       # databases to backup (all if empty)
 
 # set mysqldump options
 dumpopts='--single-transaction --flush-logs --flush-privileges'
@@ -37,7 +38,7 @@ dumpopts='--single-transaction --flush-logs --flush-privileges'
 ## don't edit below this line
 
 # get our options
-while getopts qk:h:t:c:b: opt; do
+while getopts qk:h:t:c:b:d: opt; do
   case $opt in
   q)
       v=false
@@ -56,6 +57,9 @@ while getopts qk:h:t:c:b: opt; do
       ;;
   b)
       mariadbbin=$OPTARG
+      ;;
+  d)
+      databases=$OPTARG
       ;;
   esac
 done
@@ -81,9 +85,13 @@ $v && printf 'Backup location: %s\n' $backup_dir
 
 # get a list of databases to backup (strip out garbage and internal databases)
 _get_db_list () {
-  ${mariadbbin}mysqlshow --defaults-extra-file=$mycnf | \
-    sed -r '/Databases|information_schema|performance_schema/d' | \
-    awk '{ print $2 }'
+  if [ -z $databases ]; then
+    ${mariadbbin}mysqlshow --defaults-extra-file=$mycnf | \
+      sed -r '/Databases|information_schema|performance_schema/d' | \
+      awk '{ print $2 }'
+  else
+    echo $(echo $databases | tr "," "\n")
+  fi
 }
 
 # get a list of backups in the backup directory, ignore files and links
