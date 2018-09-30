@@ -11,3 +11,4 @@ Following options are available:
 | h      | sha265  | crypto hash to use for checksums |
 | t      | /srv/backups/mariadb | root directory for all backups |
 | c      | ./.my.cnf | default location of .my.cnf for user and password configuration |
+| b      |         | Path to mariadb bin folder. Use this if mysqldump and mysqlshow is not in your path configuration. For example when using it in a crontab job. |
