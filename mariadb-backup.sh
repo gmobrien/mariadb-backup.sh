@@ -100,8 +100,6 @@ _checksum () {
 }
 
 # get the database list and remove garbage
-echo "my.cnf: $mycnf"
-`_get_db_list`
 db_list=`_get_db_list`
 
 # run the backup
