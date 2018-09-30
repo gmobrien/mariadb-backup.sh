@@ -1,0 +1,7 @@
+[mysqldump]
+user=backupuser
+password=secured
+
+[mysqlshow]
+user=backupuser
+password=secure
