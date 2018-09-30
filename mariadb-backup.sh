@@ -102,7 +102,12 @@ _get_backups () {
 
 # dump database
 _dump_db () {
-   nice -n 19 ${mariadbbin}mysqldump --defaults-extra-file=$mycnf $dumpopts $1 | nice -n 19 gzip
+  if [ -f nice ]; then
+    nicify="nice -n 19"
+  else
+    nicify=
+  fi
+  ${nicify}${mariadbbin}mysqldump --defaults-extra-file=$mycnf $dumpopts $1 | ${nicify}gzip
 }
 
 # create checksums
