@@ -6,7 +6,7 @@ Following options are available:
 
 | option | default | description |
 | ------ | ------- | ----------- |
-| v      | false   | verbose output |
+| q      |         | be quiet and produce no output |
 | k      | 7       | number of old backups to keep |
 | h      | sha265  | crypto hash to use for checksums |
 | t      | /srv/backups/mariadb | root directory for all backups |
