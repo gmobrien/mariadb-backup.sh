@@ -1,2 +1,3 @@
 # mariadb-backup.sh
-a simple script to dump and rotate MariaDB backups
+
+This project is now maintained on GitLab: https://gitlab.com/gmobrien/mariadb-backup.sh
